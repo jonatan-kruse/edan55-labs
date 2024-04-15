@@ -95,11 +95,19 @@ pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
 
             if u_edges & w != 0 {
                 return 1 + r2(state & !(u + w + v), edges);
-            } else {
+            }
+            if u_edges & w == 0 {
                 let mut new_edges = edges.clone();
                 let z_edge = u_edges | w_edges;
+                // set an edge from u to all nodes that w has an edge to
                 new_edges[u_index] |= z_edge;
-                let new_state = state & !(v + w);
+                // set an edge to u from all nodes that have an edge to w
+                for index in 0..128 {
+                    if w_edges & (1 << index) != 0 {
+                        new_edges[index] |= u;
+                    }
+                }
+                let new_state = state & !(v | w);
                 return 1 + r2(new_state, &new_edges);
             }
         }
