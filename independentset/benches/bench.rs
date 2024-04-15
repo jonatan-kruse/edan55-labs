@@ -5,7 +5,7 @@ use maxcut::{greedy_swap_cut, parse_input, random_cut};
 
 // run with `cargo bench`
 fn criterion_benchmark(c: &mut Criterion) {
-    let weighted = include_str!("../data/pw09_100.9.txt");
+    let weighted = include_str!("../data/g4.in");
     let (nbr_of_nodes, _, edges) = parse_input(weighted);
 
     c.bench_function("s weighted", |b| {
@@ -16,7 +16,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| greedy_swap_cut(random_cut(nbr_of_nodes, &edges).0, &edges, nbr_of_nodes))
     });
 
-    let matching = include_str!("../data/matching_1000.txt");
+    let matching = include_str!("../data/g4.in");
     let (nbr_of_nodes, _, edges) = parse_input(matching);
 
     c.bench_function("s matching", |b| {

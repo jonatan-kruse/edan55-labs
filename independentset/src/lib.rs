@@ -1,78 +1,86 @@
-use rand::Rng;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::collections::HashSet;
-
-pub fn random_cut(nbr_of_nodes: i32, edges: &[Edge]) -> (HashSet<i32>, i32) {
-    let mut rng = rand::thread_rng();
-    let cut = (1..=nbr_of_nodes)
-        .filter(|_| rng.gen_bool(0.5))
-        .collect::<HashSet<_>>();
-    let score = score_cut(&cut, edges);
-    (cut, score)
+pub fn parse_input(input: &str) -> (i32, Vec<u128>) {
+    let mut data = input.lines();
+    let nodes = data.next().unwrap().parse().unwrap();
+    let edges = data.map(string_to_edge).collect::<Vec<_>>();
+    (nodes, edges)
 }
 
-pub fn greedy_swap_cut(
-    start_cut: HashSet<i32>,
-    edges: &[Edge],
-    nbr_of_nodes: i32,
-) -> (HashSet<i32>, i32) {
-    let mut cut = start_cut;
-    let mut best_score = score_cut(&cut, edges);
-    let mut improved = true;
+fn string_to_edge(s: &str) -> u128 {
+    u128::from_str_radix(&s.replace(" ", "").chars().rev().collect::<String>(), 2).unwrap()
+}
 
-    while improved {
-        improved = false;
-        for n in 0..=nbr_of_nodes {
-            if !cut.remove(&n) {
-                cut.insert(n);
-            }
-            let test_score = score_cut(&cut, edges);
-            if test_score > best_score {
-                improved = true;
-                best_score = test_score;
-            } else if !cut.remove(&n) {
-                cut.insert(n);
-            }
+pub fn r0(state: u128, edges: &Vec<u128>) -> u32 {
+    if state == 0 {
+        return 0;
+    }
+    let mut max = 0;
+    let mut max_i = 0;
+    for (i, e) in edges.iter().enumerate() {
+        if (1 << i) & state == 0 {
+            continue;
+        }
+        let deg = (state & e).count_ones();
+        if deg == 0 {
+            return 1 + r0(state ^ (1 << i), edges);
+        }
+        if deg > max {
+            max = deg;
+            max_i = i;
         }
     }
-    (cut, best_score)
+    return r0(state ^ (1 << max_i), edges)
+        .max(1 + r0((state ^ (1 << max_i)) & !edges[max_i], edges));
 }
 
-fn score_cut(cut: &HashSet<i32>, edges: &[Edge]) -> i32 {
-    edges
-        .par_iter()
-        .filter_map(|e| {
-            let u_in_cut = cut.contains(&e.u);
-            let v_in_cut = cut.contains(&e.v);
-            if u_in_cut ^ v_in_cut {
-                Some(e.w)
-            } else {
-                None
-            }
-        })
-        .sum()
+pub fn r1(state: u128, edges: &Vec<u128>) -> u32 {
+    if state == 0 {
+        return 0;
+    }
+    let mut max = 0;
+    let mut max_i = 0;
+
+    for (i, e) in edges.iter().enumerate() {
+        if (1 << i) & state == 0 {
+            continue;
+        }
+        let deg = (state & e).count_ones();
+        if deg == 1 {
+            return 1 + r1((state ^ (1 << i)) & !edges[i], edges);
+        }
+        if deg == 0 {
+            return 1 + r1(state ^ (1 << i), edges);
+        }
+        if deg > max {
+            max = deg;
+            max_i = i;
+        }
+    }
+    return r1(state ^ (1 << max_i), edges)
+        .max(1 + r1((state ^ (1 << max_i)) & !edges[max_i], edges));
 }
 
-#[derive(Debug)]
-pub struct Edge {
-    u: i32,
-    v: i32,
-    w: i32,
-}
-
-pub fn parse_input(input: &str) -> (i32, i32, Vec<Edge>) {
-    let mut data = input.lines();
-    let (nodes, edges) = data.next().unwrap().split_once(' ').unwrap();
-    let nbr_of_nodes: i32 = nodes.parse().unwrap();
-    let nbr_of_edges: i32 = edges.parse().unwrap();
-    let edges = data.map(string_to_edge).collect::<Vec<_>>();
-    (nbr_of_nodes, nbr_of_edges, edges)
-}
-
-fn string_to_edge(s: &str) -> Edge {
-    let mut iter = s.split_whitespace();
-    let u = iter.next().unwrap().parse().unwrap();
-    let v = iter.next().unwrap().parse().unwrap();
-    let w = iter.next().unwrap().parse().unwrap();
-    Edge { u, v, w }
+pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
+    if state == 0 {
+        return 0;
+    }
+    let mut max = 0;
+    let mut max_i = 0;
+    for (i, e) in edges.iter().enumerate() {
+        if (1 << i) & state == 0 {
+            continue;
+        }
+        let deg = (state & e).count_ones();
+        if deg == 1 {
+            return 1 + r2((state ^ (1 << i)) & !edges[i], edges);
+        }
+        if deg == 0 {
+            return 1 + r2(state ^ (1 << i), edges);
+        }
+        if deg > max {
+            max = deg;
+            max_i = i;
+        }
+    }
+    return r2(state ^ (1 << max_i), edges)
+        .max(1 + r1((state ^ (1 << max_i)) & !edges[max_i], edges));
 }
