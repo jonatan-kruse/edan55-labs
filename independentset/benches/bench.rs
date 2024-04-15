@@ -1,30 +1,22 @@
-use std::collections::HashSet;
-
 use criterion::{criterion_group, criterion_main, Criterion};
-use maxcut::{greedy_swap_cut, parse_input, random_cut};
+use independentset::{path_to_edges, r0, r1, r2};
 
 // run with `cargo bench`
 fn criterion_benchmark(c: &mut Criterion) {
-    let weighted = include_str!("../data/g4.in");
-    let (nbr_of_nodes, _, edges) = parse_input(weighted);
+    let (nbr_of_nodes_r0, edges_r0) = path_to_edges("./data/g40.in");
+    let (nbr_of_nodes_r1, edges_r1) = path_to_edges("./data/g70.in");
+    let (nbr_of_nodes_r2, edges_r2) = path_to_edges("./data/g80.in");
 
-    c.bench_function("s weighted", |b| {
-        b.iter(|| greedy_swap_cut(HashSet::new(), &edges, nbr_of_nodes))
+    c.bench_function("r0", |b| {
+        b.iter(|| r0((1 << nbr_of_nodes_r0) - 1, &edges_r0))
     });
 
-    c.bench_function("rs weighted", |b| {
-        b.iter(|| greedy_swap_cut(random_cut(nbr_of_nodes, &edges).0, &edges, nbr_of_nodes))
+    c.bench_function("r1", |b| {
+        b.iter(|| r1((1 << nbr_of_nodes_r1) - 1, &edges_r1))
     });
 
-    let matching = include_str!("../data/g4.in");
-    let (nbr_of_nodes, _, edges) = parse_input(matching);
-
-    c.bench_function("s matching", |b| {
-        b.iter(|| greedy_swap_cut(HashSet::new(), &edges, nbr_of_nodes))
-    });
-
-    c.bench_function("rs matching", |b| {
-        b.iter(|| greedy_swap_cut(random_cut(nbr_of_nodes, &edges).0, &edges, nbr_of_nodes))
+    c.bench_function("r2", |b| {
+        b.iter(|| r2((1 << nbr_of_nodes_r2) - 1, &edges_r2))
     });
 }
 

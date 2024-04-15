@@ -1,4 +1,7 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{
+    fs,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 static CALL_COUNT: AtomicUsize = AtomicUsize::new(0);
 
@@ -16,6 +19,11 @@ pub fn parse_input(input: &str) -> (i32, Vec<u128>) {
 
 pub fn string_to_edge(s: &str) -> u128 {
     u128::from_str_radix(&s.replace(' ', "").chars().rev().collect::<String>(), 2).unwrap()
+}
+
+pub fn path_to_edges(path: &str) -> (i32, Vec<u128>) {
+    let input = fs::read_to_string(path).expect("Should have been able to read the file");
+    parse_input(&input)
 }
 
 pub fn r0(state: u128, edges: &Vec<u128>) -> u32 {
@@ -39,7 +47,11 @@ pub fn r0(state: u128, edges: &Vec<u128>) -> u32 {
         }
     }
     let new_state = state & !(1 << max_i);
-    r0(new_state, edges).max(1 + r0((new_state) & !edges[max_i], edges))
+    let results = rayon::join(
+        || r0(new_state, edges),
+        || r0(new_state & !edges[max_i], edges),
+    );
+    results.0.max(1 + results.1)
 }
 
 pub fn r1(state: u128, edges: &Vec<u128>) -> u32 {
@@ -68,7 +80,11 @@ pub fn r1(state: u128, edges: &Vec<u128>) -> u32 {
         }
     }
     let new_state = state & !(1 << max_i);
-    r1(new_state, edges).max(1 + r1(new_state & !edges[max_i], edges))
+    let results = rayon::join(
+        || r1(new_state, edges),
+        || r1(new_state & !edges[max_i], edges),
+    );
+    results.0.max(1 + results.1)
 }
 
 pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
@@ -95,16 +111,14 @@ pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
 
             if u_edges & w != 0 {
                 return 1 + r2(state & !(u + w + v), edges);
-            }
-            if u_edges & w == 0 {
+            } else {
                 let mut new_edges = edges.clone();
-                let z_edge = u_edges | w_edges;
                 // set an edge from u to all nodes that w has an edge to
-                new_edges[u_index] |= z_edge;
+                new_edges[u_index] |= w_edges;
                 // set an edge to u from all nodes that have an edge to w
-                for index in 0..128 {
+                for (index, number) in new_edges.iter_mut().enumerate() {
                     if w_edges & (1 << index) != 0 {
-                        new_edges[index] |= u;
+                        *number |= u;
                     }
                 }
                 let new_state = state & !(v | w);
@@ -124,5 +138,9 @@ pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
     }
 
     let new_state = state & !(1 << max_i);
-    r2(new_state, edges).max(1 + r2(new_state & !edges[max_i], edges))
+    let results = rayon::join(
+        || r2(new_state, edges),
+        || r2(new_state & !edges[max_i], edges),
+    );
+    results.0.max(1 + results.1)
 }
