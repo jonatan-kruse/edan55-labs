@@ -26,20 +26,20 @@ pub fn path_to_edges(path: &str) -> (i32, Vec<u128>) {
     parse_input(&input)
 }
 
-pub fn r0(state: u128, edges: &Vec<u128>) -> u32 {
-    CALL_COUNT.fetch_add(1, Ordering::SeqCst);
+pub fn r0(state: u128, edges: &[u128]) -> u32 {
+    // CALL_COUNT.fetch_add(1, Ordering::SeqCst);
     if state == 0 {
         return 0;
     }
     let mut max = 0;
     let mut max_i = 0;
-    for (i, e) in edges.iter().enumerate() {
+    for (i, &e) in edges.iter().enumerate() {
         if (1 << i) & state == 0 {
             continue;
         }
         let deg = (state & e).count_ones();
         if deg == 0 {
-            return 1 + r0(state ^ (1 << i), edges);
+            return 1 + r0(state & !(1 << i), edges);
         }
         if deg > max {
             max = deg;
@@ -49,13 +49,13 @@ pub fn r0(state: u128, edges: &Vec<u128>) -> u32 {
     let new_state = state & !(1 << max_i);
     let results = rayon::join(
         || r0(new_state, edges),
-        || r0(new_state & !edges[max_i], edges),
+        || 1 + r0(new_state & !edges[max_i], edges),
     );
-    results.0.max(1 + results.1)
+    results.0.max(results.1)
 }
 
-pub fn r1(state: u128, edges: &Vec<u128>) -> u32 {
-    CALL_COUNT.fetch_add(1, Ordering::SeqCst);
+pub fn r1(state: u128, edges: &[u128]) -> u32 {
+    // CALL_COUNT.fetch_add(1, Ordering::SeqCst);
 
     if state == 0 {
         return 0;
@@ -63,16 +63,16 @@ pub fn r1(state: u128, edges: &Vec<u128>) -> u32 {
     let mut max = 0;
     let mut max_i = 0;
 
-    for (i, e) in edges.iter().enumerate() {
+    for (i, &e) in edges.iter().enumerate() {
         if (1 << i) & state == 0 {
             continue;
         }
         let deg = (state & e).count_ones();
         if deg == 1 {
-            return 1 + r1((state ^ (1 << i)) & !edges[i], edges);
+            return 1 + r1((state & !(1 << i)) & !edges[i], edges);
         }
         if deg == 0 {
-            return 1 + r1(state ^ (1 << i), edges);
+            return 1 + r1(state & !(1 << i), edges);
         }
         if deg > max {
             max = deg;
@@ -82,18 +82,19 @@ pub fn r1(state: u128, edges: &Vec<u128>) -> u32 {
     let new_state = state & !(1 << max_i);
     let results = rayon::join(
         || r1(new_state, edges),
-        || r1(new_state & !edges[max_i], edges),
+        || 1 + r1(new_state & !edges[max_i], edges),
     );
-    results.0.max(1 + results.1)
+    results.0.max(results.1)
 }
 
-pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
+pub fn r2(state: u128, edges: &[u128]) -> u32 {
+    // CALL_COUNT.fetch_add(1, Ordering::SeqCst);
     if state == 0 {
         return 0;
     }
     let mut max = 0;
     let mut max_i = 0;
-    for (i, e) in edges.iter().enumerate() {
+    for (i, &e) in edges.iter().enumerate() {
         let v = 1 << i;
         if v & state == 0 {
             continue;
@@ -112,7 +113,7 @@ pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
             if u_edges & w != 0 {
                 return 1 + r2(state & !(u + w + v), edges);
             } else {
-                let mut new_edges = edges.clone();
+                let mut new_edges = edges.to_vec();
                 // set an edge from u to all nodes that w has an edge to
                 new_edges[u_index] |= w_edges;
                 // set an edge to u from all nodes that have an edge to w
@@ -126,10 +127,10 @@ pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
             }
         }
         if deg == 1 {
-            return 1 + r2((state ^ v) & !edges[i], edges);
+            return 1 + r2((state & !v) & !edges[i], edges);
         }
         if deg == 0 {
-            return 1 + r2(state ^ v, edges);
+            return 1 + r2(state & !v, edges);
         }
         if deg > max {
             max = deg;
@@ -140,7 +141,7 @@ pub fn r2(state: u128, edges: &Vec<u128>) -> u32 {
     let new_state = state & !(1 << max_i);
     let results = rayon::join(
         || r2(new_state, edges),
-        || r2(new_state & !edges[max_i], edges),
+        || 1 + r2(new_state & !edges[max_i], edges),
     );
-    results.0.max(1 + results.1)
+    results.0.max(results.1)
 }
