@@ -1,10 +1,11 @@
-use super::arena_tree::ArenaTree;
+use crate::arena_tree::ArenaTree;
+use core::str;
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
 };
 
-pub fn parse_graph(input: &str) -> HashMap<usize, HashSet<usize>> {
+pub fn parse_graph(input: &str) -> Graph {
     let data = input.lines();
     let mut nodes = HashMap::new();
     data.for_each(|line| {
@@ -15,7 +16,7 @@ pub fn parse_graph(input: &str) -> HashMap<usize, HashSet<usize>> {
     nodes
 }
 
-fn parse_graph_line(line: &str, nodes: &mut HashMap<usize, HashSet<usize>>) {
+fn parse_graph_line(line: &str, nodes: &mut Graph) {
     let (u, v) = line.split_once(' ').unwrap();
     let u = u.parse().unwrap();
     let v = v.parse().unwrap();
@@ -41,7 +42,7 @@ pub fn parse_tree(input: &str) -> ArenaTree<VT> {
     tree
 }
 
-fn build_tree(tree: &mut ArenaTree<VT>, idx: usize, nodes: &HashMap<usize, HashSet<usize>>) {
+fn build_tree(tree: &mut ArenaTree<VT>, idx: usize, nodes: &Graph) {
     if let Some(neighbors) = nodes.get(&idx) {
         for &neighbor in neighbors {
             if tree.arena.get(&idx).unwrap().children.contains(&neighbor)
@@ -65,6 +66,8 @@ fn node_from_line(line: &str, tree: &mut ArenaTree<VT>) {
     let v_t = numbs.map(|c| c.parse().unwrap()).collect::<HashSet<_>>();
     tree.node(id, VT(v_t));
 }
+
+pub type Graph = HashMap<usize, HashSet<usize>>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct VT(HashSet<usize>);
