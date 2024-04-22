@@ -1,17 +1,11 @@
+use treewidth::path_to_tree;
+
 fn main() {
-    r0_test();
-    r1_test();
-    r2_test();
-}
-
-fn r0_test() {
-    print!("R0");
-}
-
-fn r1_test() {
-    print!("R1");
-}
-
-fn r2_test() {
-    print!("R2");
+    // let tree = path_to_tree("./data/eppstein.td");
+    // let tree = path_to_tree("./data/ErreraGraph.td");
+    let tree = path_to_tree("./data/HarborthGraph.td");
+    println!("\nsize: {:?}", tree.size());
+    println!("edges: {:?}", tree.edges());
+    println!("max depth: {:?}", tree.max_depth());
+    tree.display();
 }
