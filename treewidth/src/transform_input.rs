@@ -24,7 +24,7 @@ fn parse_graph_line(line: &str, nodes: &mut Graph) {
     nodes.entry(v).or_default().insert(u);
 }
 
-pub fn parse_tree(input: &str) -> ArenaTree<VT> {
+pub fn parse_tree(input: &str) -> ArenaTree<Bag> {
     let data = input.lines();
     let mut tree = ArenaTree::default();
     let mut nodes = HashMap::new();
@@ -42,7 +42,7 @@ pub fn parse_tree(input: &str) -> ArenaTree<VT> {
     tree
 }
 
-fn build_tree(tree: &mut ArenaTree<VT>, idx: usize, nodes: &Graph) {
+fn build_tree(tree: &mut ArenaTree<Bag>, idx: usize, nodes: &Graph) {
     if let Some(neighbors) = nodes.get(&idx) {
         for &neighbor in neighbors {
             if tree.arena.get(&idx).unwrap().children.contains(&neighbor)
@@ -60,24 +60,49 @@ fn build_tree(tree: &mut ArenaTree<VT>, idx: usize, nodes: &Graph) {
     }
 }
 
-fn node_from_line(line: &str, tree: &mut ArenaTree<VT>) {
+fn node_from_line(line: &str, tree: &mut ArenaTree<Bag>) {
     let mut numbs = line.split_ascii_whitespace().skip(1);
     let id = numbs.next().unwrap().parse().unwrap();
-    let v_t = numbs.enumerate().map(|(i, c)| (c.parse().unwrap(), i)).collect::<HashMap<usize, usize>>();
-    tree.node(id, VT(v_t));
+    let v_t = numbs
+        .enumerate()
+        .map(|(i, c)| (c.parse().unwrap(), i.try_into().unwrap()))
+        .collect::<HashMap<usize, u8>>();
+    tree.node(id, Bag::new(v_t));
 }
 
 pub type Graph = HashMap<usize, HashSet<usize>>;
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
 //VT is a HashMap<IndexGlobal, IndexLocal>
-pub struct VT(pub HashMap<usize, usize>);
 
-impl Display for VT {
+pub type GlobalIndex = usize;
+pub type LocalIndex = u8;
+pub type Bitmap = u64;
+pub type Score = u8;
+
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct Bag {
+    pub vt: HashMap<GlobalIndex, LocalIndex>,
+    pub table: HashMap<Bitmap, Score>,
+}
+
+impl Bag {
+    pub fn new(vt: HashMap<usize, u8>) -> Self {
+        Self {
+            vt,
+            table: HashMap::new(),
+        }
+    }
+
+    fn set_table(&mut self, hashmap: HashMap<Bitmap, Score>) {
+        self.table = hashmap;
+    }
+}
+
+impl Display for Bag {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{")?;
         // loop over the set of vertices and print them with a space between them but not at the end
-        for (i, v) in self.0.iter().enumerate() {
+        for (i, v) in self.vt.iter().enumerate() {
             if i != 0 {
                 write!(f, ", ")?;
             }
