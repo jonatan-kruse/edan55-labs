@@ -70,6 +70,10 @@ where
         self.arena.len()
     }
 
+    pub fn root(&self) -> Option<&Node<T>> {
+        self.arena.values().find(|node| node.parent.is_none())
+    }
+
     pub fn edges(&self) -> usize {
         self.arena
             .iter()
