@@ -63,14 +63,15 @@ fn build_tree(tree: &mut ArenaTree<VT>, idx: usize, nodes: &Graph) {
 fn node_from_line(line: &str, tree: &mut ArenaTree<VT>) {
     let mut numbs = line.split_ascii_whitespace().skip(1);
     let id = numbs.next().unwrap().parse().unwrap();
-    let v_t = numbs.map(|c| c.parse().unwrap()).collect::<HashSet<_>>();
+    let v_t = numbs.enumerate().map(|(i, c)| (c.parse().unwrap(), i)).collect::<HashMap<usize, usize>>();
     tree.node(id, VT(v_t));
 }
 
 pub type Graph = HashMap<usize, HashSet<usize>>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct VT(HashSet<usize>);
+//VT is a HashMap<IndexGlobal, IndexLocal>
+pub struct VT(pub HashMap<usize, usize>);
 
 impl Display for VT {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -80,7 +81,7 @@ impl Display for VT {
             if i != 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", v)?;
+            write!(f, "{}", v.0)?;
         }
         // print the closing brace
         write!(f, "}}")?;

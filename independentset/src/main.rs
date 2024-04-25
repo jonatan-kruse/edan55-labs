@@ -6,7 +6,7 @@ fn main() {
 }
 
 fn r0_test() {
-    for i in 3..7 {
+    for i in 3..8 {
         let (nodes, edges) = path_to_edges(&format!("./data/g{}0.in", i));
         println!("R0, g{}0.in: {}", i, r0((1 << nodes) - 1, &edges));
     }
