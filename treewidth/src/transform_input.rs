@@ -64,9 +64,11 @@ fn node_from_line(line: &str, tree: &mut ArenaTree<Bag>) {
     let mut numbs = line.split_ascii_whitespace().skip(1);
     let id = numbs.next().unwrap().parse().unwrap();
     let v_t = numbs
+        .collect::<HashSet<_>>()
+        .iter()
         .enumerate()
         .map(|(i, c)| (c.parse().unwrap(), i.try_into().unwrap()))
-        .collect::<HashMap<usize, u8>>();
+        .collect::<HashMap<GlobalIndex, LocalIndex>>();
     tree.node(id, Bag::new(v_t));
 }
 
@@ -82,19 +84,11 @@ pub type Score = u32;
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Bag {
     pub vt: HashMap<GlobalIndex, LocalIndex>,
-    pub table: HashMap<Bitmap, Score>,
 }
 
 impl Bag {
     pub fn new(vt: HashMap<usize, u8>) -> Self {
-        Self {
-            vt,
-            table: HashMap::new(),
-        }
-    }
-
-    pub fn set_table(&mut self, hashmap: HashMap<Bitmap, Score>) {
-        self.table = hashmap;
+        Self { vt }
     }
 }
 
