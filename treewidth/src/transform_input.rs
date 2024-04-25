@@ -77,7 +77,7 @@ pub type Graph = HashMap<usize, HashSet<usize>>;
 pub type GlobalIndex = usize;
 pub type LocalIndex = u8;
 pub type Bitmap = u64;
-pub type Score = u8;
+pub type Score = u32;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Bag {
@@ -93,7 +93,7 @@ impl Bag {
         }
     }
 
-    fn set_table(&mut self, hashmap: HashMap<Bitmap, Score>) {
+    pub fn set_table(&mut self, hashmap: HashMap<Bitmap, Score>) {
         self.table = hashmap;
     }
 }
