@@ -37,15 +37,18 @@ pub fn r0(state: u128, edges: &[u128]) -> u32 {
         if (1 << i) & state == 0 {
             continue;
         }
+
         let deg = (state & e).count_ones();
         if deg == 0 {
             return 1 + r0(state & !(1 << i), edges);
         }
+
         if deg > max {
             max = deg;
             max_i = i;
         }
     }
+
     let new_state = state & !(1 << max_i);
     let results = rayon::join(
         || r0(new_state, edges),
@@ -67,13 +70,16 @@ pub fn r1(state: u128, edges: &[u128]) -> u32 {
         if (1 << i) & state == 0 {
             continue;
         }
+
         let deg = (state & e).count_ones();
         if deg == 1 {
             return 1 + r1((state & !(1 << i)) & !edges[i], edges);
         }
+
         if deg == 0 {
             return 1 + r1(state & !(1 << i), edges);
         }
+
         if deg > max {
             max = deg;
             max_i = i;
