@@ -1,8 +1,7 @@
-
 use std::collections::{HashMap, HashSet};
 
 use crate::arena_tree::ArenaTree;
-use crate::transform_input::{Bag, Bitmap, GlobalIndex, Graph, Score};
+use crate::transform_input::{Bag, Bitmap, GlobalIndex, Graph, LocalIndex, Score};
 
 type Table = HashMap<Bitmap, Score>;
 
@@ -20,19 +19,23 @@ pub fn traverse<'a>(
     let children = tree.arena.get(&nodeidx).unwrap().children.clone();
     if children.len() == 0 {
         let node = tree.arena.get(&nodeidx).unwrap();
-        (build_leaf_table(graph, &node.val), &node.val)
+        let test = (build_leaf_table(graph, &node.val), &node.val);
+        // dbg!(test.clone());
+        test
     } else {
         let child_tables = children.iter().map(|c| traverse(tree, graph, *c)).collect();
         let node = tree.arena.get(&nodeidx).unwrap();
-        (
+        let test = (
             build_parent_table(graph, &node.val, child_tables),
             &node.val,
-        )
+        );
+        // dbg!(test.clone());
+        test
     }
 }
 
 pub fn build_leaf_table(graph: &Graph, bag: &Bag) -> Table {
-    let matrix = local_adj_matrix(graph, bag);
+    let matrix = local_adj_matrix(graph, &bag.vt);
     let mut table = HashMap::new();
     let all_possible_bitmaps = 0 as Bitmap..(1 << bag.vt.len());
     for bitmap in all_possible_bitmaps {
@@ -51,14 +54,14 @@ pub fn build_leaf_table(graph: &Graph, bag: &Bag) -> Table {
 }
 
 pub fn build_parent_table(graph: &Graph, bag: &Bag, child_tables: Vec<(Table, &Bag)>) -> Table {
-    let matrix = local_adj_matrix(graph, bag);
+    let matrix = local_adj_matrix(graph, &bag.vt);
     let mut table = HashMap::new();
-    let all_possible_bitmaps = 0 as Bitmap..(1 << bag.vt.len());
-    for bitmap in all_possible_bitmaps {
+    let all_u = 0 as Bitmap..(1 << bag.vt.len());
+    for u in all_u {
         let mut independent = true;
-        for (i, e) in matrix.iter().enumerate() {
-            if bitmap & (1 << i) != 0 {
-                let collisions = bitmap & e;
+        for (bit_position, edges) in matrix.iter().enumerate() {
+            if u & (1 << bit_position) != 0 {
+                let collisions = u & edges;
                 independent &= collisions == 0;
             }
         }
@@ -66,44 +69,63 @@ pub fn build_parent_table(graph: &Graph, bag: &Bag, child_tables: Vec<(Table, &B
             let mut sum = 0;
             for (child_t, child_bag) in child_tables.clone() {
                 let mut max = 0;
-                let global_u = localbitmap_to_globalindexs(bitmap, bag);
-                let u_intersect_vt = globalindexs_to_localbitmap(&global_u, child_bag);
-                let all_masked_bitmaps = (0 as Bitmap..(1 << child_bag.vt.len())).map(|ui| ui | u_intersect_vt);
-                for masked_bitmap in all_masked_bitmaps{
-                    if let Some(some_score) = child_t.get(&masked_bitmap) {
-                        max = max.max(some_score - u_intersect_vt.count_ones());
+                let global_u = localbitmap_to_globalindexs(u, bag);
+                let u_intersect_vti = globalindexs_to_localbitmap(&global_u, &child_bag.vt);
+                let mask = globalindexs_to_localbitmap(
+                    &bag.vt.keys().map(|i| *i).collect(),
+                    &child_bag.vt,
+                );
+                // Kollar bara aktiva inte vilka som ska vara av.
+                // Kolla vilka index från U som finns i VT och lås dom.
+                // Dvs kolla up hur man iterar subset effektivt
+
+                for ui in 0..(1 << child_bag.vt.len()) {
+                    if ui & mask == u_intersect_vti {
+                        if let Some(some_score) = child_t.get(&ui) {
+                            let global_ui = localbitmap_to_globalindexs(ui, &child_bag);
+                            let u_intersect_ui =
+                                global_ui.intersection(&global_u).collect::<HashSet<_>>();
+                            max = max.max(some_score - u_intersect_ui.len() as u32);
+                        }
                     }
                 }
                 sum += max;
             }
-            table.insert(bitmap, sum + bitmap.count_ones());
+            table.insert(u, sum + u.count_ones());
         }
     }
     table
 }
 
-pub fn localbitmap_to_globalindexs(bitmap: Bitmap, bag: &Bag) -> HashSet<GlobalIndex>{
+pub fn localbitmap_to_globalindexs(bitmap: Bitmap, bag: &Bag) -> HashSet<GlobalIndex> {
     let mut indexs = vec![];
-    for i in 0..bag.vt.len(){
-        if bitmap & (1 << i) != 0{
+    for i in 0..bag.vt.len() {
+        if bitmap & (1 << i) != 0 {
             indexs.push(i as u8);
         }
     }
-    bag.vt.clone().into_iter().filter(|(_, local)| indexs.contains(&local)).map(|i| i.0).collect()
+    bag.vt
+        .clone()
+        .into_iter()
+        .filter(|(_, local)| indexs.contains(&local))
+        .map(|i| i.0)
+        .collect()
 }
 
-pub fn globalindexs_to_localbitmap(subset: &HashSet<GlobalIndex>, bag: &Bag) -> Bitmap {
+pub fn globalindexs_to_localbitmap(
+    subset: &HashSet<GlobalIndex>,
+    bag: &HashMap<GlobalIndex, LocalIndex>,
+) -> Bitmap {
     let mut bitmap = 0;
-    for e in subset.intersection(&bag.vt.keys().map(|u| *u).collect::<HashSet<GlobalIndex>>()) {
-        bitmap |= 1 << bag.vt.get(e).unwrap();
+    for e in subset.intersection(&bag.keys().map(|u| *u).collect::<HashSet<GlobalIndex>>()) {
+        bitmap |= 1 << bag.get(e).unwrap();
     }
     bitmap
 }
 
-pub fn local_adj_matrix(graph: &Graph, bag: &Bag) -> Vec<Bitmap> {
-    dbg!(bag.vt.clone());
-    let mut matrix = vec![0; bag.vt.len()];
-    for (global, local) in bag.vt.iter() {
+pub fn local_adj_matrix(graph: &Graph, bag: &HashMap<GlobalIndex, LocalIndex>) -> Vec<Bitmap> {
+    let mut matrix = vec![0; bag.len()];
+    for (global, local) in bag.iter() {
         matrix[*local as usize] = globalindexs_to_localbitmap(graph.get(global).unwrap(), bag);
     }
     matrix
