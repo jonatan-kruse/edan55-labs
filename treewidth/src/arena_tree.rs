@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Node<T> {
@@ -24,10 +24,7 @@ pub struct ArenaTree<T> {
     pub arena: HashMap<usize, Node<T>>,
 }
 
-impl<T> ArenaTree<T>
-where
-    T: Display,
-{
+impl<T> ArenaTree<T> {
     pub fn node(&mut self, idx: usize, val: T) -> usize {
         self.arena.entry(idx).or_insert_with(|| Node::new(idx, val));
         idx

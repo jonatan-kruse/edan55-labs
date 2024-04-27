@@ -1,9 +1,6 @@
 use crate::arena_tree::ArenaTree;
 use core::str;
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::{Debug, Display},
-};
+use std::collections::{HashMap, HashSet};
 
 pub fn parse_graph(input: &str) -> Graph {
     let data = input.lines();
@@ -63,13 +60,13 @@ fn build_tree(tree: &mut ArenaTree<Bag>, idx: usize, nodes: &Graph) {
 fn node_from_line(line: &str, tree: &mut ArenaTree<Bag>) {
     let mut numbs = line.split_ascii_whitespace().skip(1);
     let id = numbs.next().unwrap().parse().unwrap();
-    let v_t = numbs
+    let bag = numbs
         .collect::<HashSet<_>>()
         .iter()
         .enumerate()
         .map(|(i, c)| (c.parse().unwrap(), i.try_into().unwrap()))
         .collect::<HashMap<GlobalIndex, LocalIndex>>();
-    tree.node(id, Bag::new(v_t));
+    tree.node(id, bag);
 }
 
 pub type Graph = HashMap<usize, HashSet<usize>>;
@@ -81,29 +78,4 @@ pub type LocalIndex = u8;
 pub type Bitmap = u64;
 pub type Score = u32;
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct Bag {
-    pub vt: HashMap<GlobalIndex, LocalIndex>,
-}
-
-impl Bag {
-    pub fn new(vt: HashMap<usize, u8>) -> Self {
-        Self { vt }
-    }
-}
-
-impl Display for Bag {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{")?;
-        // loop over the set of vertices and print them with a space between them but not at the end
-        for (i, v) in self.vt.iter().enumerate() {
-            if i != 0 {
-                write!(f, ", ")?;
-            }
-            write!(f, "{}", v.0)?;
-        }
-        // print the closing brace
-        write!(f, "}}")?;
-        Ok(())
-    }
-}
+pub type Bag = HashMap<GlobalIndex, LocalIndex>;
