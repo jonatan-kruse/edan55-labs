@@ -39,7 +39,7 @@ pub struct Graph {
     pub fed: usize,
     pub post: usize,
 }
-
+#[derive(Clone)]
 pub struct Edge {
     pub u: usize,
     pub v: usize,

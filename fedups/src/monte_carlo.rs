@@ -2,8 +2,7 @@ use rand::Rng;
 
 use crate::transform_input::Graph;
 
-pub fn monte_carlo_algo(input: Graph) -> String {
-    let iterations = 10000;
+pub fn monte_carlo_algo(input: &Graph, iterations: i32) -> (f32, f32) {
     let mut total_time_fed = 0.0;
     let mut total_time_post = 0.0;
     for _ in 0..iterations {
@@ -78,6 +77,8 @@ pub fn monte_carlo_algo(input: Graph) -> String {
         }
         total_time_post += time;
     }
-    "\nfed: ".to_owned() + &(total_time_fed / iterations as f32).to_string()
-        + "\npost: " + &(total_time_post / iterations as f32).to_string()
+    (
+        total_time_fed / iterations as f32,
+        total_time_post / iterations as f32,
+    )
 }
