@@ -18,7 +18,7 @@ pub fn test_monte_carlo(path: &str) {
         let (mut error_fed, mut error_ups) = (1.0, 1.0);
         let mut iterations = 1;
         while (error_fed > 0.001) | (error_ups > 0.001) {
-            iterations = iterations * 10;
+            iterations *= 10;
             let (test_fed, test_ups) = monte_carlo_algo(&input, iterations);
             error_fed = (correct_fed - test_fed) / correct_fed;
             error_ups = (correct_ups - test_ups) / correct_ups;
@@ -33,7 +33,7 @@ pub fn run_monte_carlo(path: &str) {
     print!("{path} - Monte Carlo:  ");
     let input = transform_input("./data/".to_owned() + path + ".in");
     let (fed, post) = run_with_spinner(|| monte_carlo_algo(&input, 10000));
-    let answer = "\nfed: ".to_owned() + &(fed).to_string() + "\npost: " + &(post).to_string();
+    let answer = "\n    fed: ".to_owned() + &(fed).to_string() + "\n    post: " + &(post).to_string();
     println!("{answer}");
 }
 
@@ -41,7 +41,7 @@ pub fn run_markov(path: &str) {
     print!("{path} - Markov Chain: ");
     let input = transform_input("./data/".to_owned() + path + ".in");
     let (fed, post) = run_with_spinner(|| markov_algo(&input));
-    let answer = "\nfed: ".to_owned() + &(fed).to_string() + "\npost: " + &(post).to_string();
+    let answer = "\n    fed: ".to_owned() + &(fed).to_string() + "\n    post: " + &(post).to_string();
     println!("{answer}");
 }
 

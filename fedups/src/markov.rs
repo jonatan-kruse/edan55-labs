@@ -15,7 +15,7 @@ pub fn markov_algo(input: &Graph) -> (f32, f32) {
 
     let x = (a - Matrix::<f32>::identity(input.nodes)).solve(b).unwrap();
     (
-        *x.iter().skip(input.fed).next().unwrap(),
-        *x.iter().skip(input.post).next().unwrap(),
+        *x.iter().nth(input.fed).unwrap(),
+        *x.iter().nth(input.post).unwrap(),
     )
 }
