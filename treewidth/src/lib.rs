@@ -6,14 +6,18 @@ use crossterm::{
     terminal::{Clear, ClearType},
     ExecutableCommand,
 };
-use std::io::{stdout, Write};
-use std::{thread, time::Duration};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::{
+    collections::HashSet,
+    io::{stdout, Write},
+};
+use std::{thread, time::Duration};
 
 use std::fs;
 
 use algorithm::solve_max_independent_set;
+use algorithm::r2;
 use arena_tree::ArenaTree;
 use transform_input::{parse_graph, parse_tree, Bag, Graph, Score};
 
@@ -29,13 +33,31 @@ fn path_to_graph(path: &str) -> Graph {
 
 pub fn the_algorithm(path: &str) -> Score {
     let (graph, tree) = path_to_graph_tree(path);
-    solve_max_independent_set(graph, tree)
+    if graph.len() < 128 {
+        println!("Brute forcing");
+        let edges = graph_to_adj_matrix(graph);
+        r2((1 << edges.len()) - 1, &edges)
+    } else {
+        solve_max_independent_set(graph, tree)
+    }
 }
 
 fn path_to_graph_tree(path: &str) -> (Graph, ArenaTree<Bag>) {
     let graph = path_to_graph(&(path.to_owned() + ".gr"));
     let tree = path_to_tree(&(path.to_owned() + ".td"));
     (graph, tree)
+}
+
+fn graph_to_adj_matrix(graph: Graph) -> Vec<u128> {
+    let mut matrix = vec![0; graph.len()];
+    for (key, edges) in graph {
+        let mut row = 0;
+        for node in edges {
+            row += 1 << (node - 1);
+        }
+        matrix[key-1] = row;
+    }
+    matrix
 }
 
 pub fn print_bag_tree(path: &str) {

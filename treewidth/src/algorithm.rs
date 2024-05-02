@@ -130,3 +130,62 @@ pub fn local_adj_matrix(graph: &Graph, bag: &HashMap<GlobalIndex, LocalIndex>) -
     }
     matrix
 }
+
+// Brute force graph search
+pub fn r2(state: u128, edges: &[u128]) -> u32 {
+    if state == 0 {
+        return 0;
+    }
+    let mut max = 0;
+    let mut max_i = 0;
+    for (i, &e) in edges.iter().enumerate() {
+        let v = 1 << i;
+        if v & state == 0 {
+            continue;
+        }
+        let active_edges = state & e;
+        let deg = active_edges.count_ones();
+        if deg == 2 {
+            let u_index = active_edges.trailing_zeros() as usize;
+            let u = 1 << u_index;
+            let u_edges = edges[u_index];
+
+            let w_index = 127 - active_edges.leading_zeros() as usize;
+            let w = 1 << w_index;
+            let w_edges = edges[w_index];
+
+            if u_edges & w != 0 {
+                return 1 + r2(state & !(u + w + v), edges);
+            } else {
+                let mut new_edges = edges.to_vec();
+                // set an edge from u to all nodes that w has an edge to
+                new_edges[u_index] |= w_edges;
+                // set an edge to u from all nodes that have an edge to w
+                for (index, number) in new_edges.iter_mut().enumerate() {
+                    if w_edges & (1 << index) != 0 {
+                        *number |= u;
+                    }
+                }
+                let new_state = state & !(v | w);
+                return 1 + r2(new_state, &new_edges);
+            }
+        }
+        if deg == 1 {
+            return 1 + r2((state & !v) & !edges[i], edges);
+        }
+        if deg == 0 {
+            return 1 + r2(state & !v, edges);
+        }
+        if deg > max {
+            max = deg;
+            max_i = i;
+        }
+    }
+
+    let new_state = state & !(1 << max_i);
+    let results = rayon::join(
+        || r2(new_state, edges),
+        || 1 + r2(new_state & !edges[max_i], edges),
+    );
+    results.0.max(results.1)
+}
