@@ -1,17 +1,10 @@
 mod algorithm;
 mod arena_tree;
 mod transform_input;
-use crossterm::{
-    cursor,
-    terminal::{Clear, ClearType},
-    ExecutableCommand,
-};
+use crossterm::{cursor, ExecutableCommand};
+use std::io::stdout;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::{
-    collections::HashSet,
-    io::{stdout, Write},
-};
 use std::{thread, time::Duration};
 
 use std::fs;
@@ -71,33 +64,30 @@ pub fn print_bag_tree(path: &str) {
 }
 
 pub fn run_with_spinner<T>(func: impl FnOnce() -> T) -> T {
-    let spinner_chars = ["🌕\n", "🌕\n", "🌔\n", "🌓\n", "🌒\n", "🌑\n", "🌑\n", "🌘\n", "🌗\n", "🌖\n"];
+    let spinner_chars = [
+        "🌕\n", "🌕\n", "🌔\n", "🌓\n", "🌒\n", "🌑\n", "🌑\n", "🌘\n", "🌗\n", "🌖\n",
+    ];
     let running = Arc::new(AtomicBool::new(true));
     let running_clone = running.clone();
+    // keep track of what was the cursor position
+    stdout().execute(cursor::SavePosition).unwrap();
 
     let handle = std::thread::spawn(move || {
         let mut index = 0;
         while running_clone.load(Ordering::SeqCst) {
             print!("{}", spinner_chars[index]);
-            let _ = stdout().flush();
+            // let _ = stdout().flush();
             index = (index + 1) % spinner_chars.len();
             thread::sleep(Duration::from_millis(100));
             // move cursor to the beginning of the line and up one line
-            stdout().execute(cursor::MoveToColumn(0)).unwrap();
-            stdout().execute(cursor::MoveUp(1)).unwrap();
+            stdout().execute(cursor::RestorePosition).unwrap();
         }
     });
 
     let result = func();
 
     running.store(false, Ordering::SeqCst);
-    stop_spinner(handle);
-    result
-}
-
-fn stop_spinner(handle: std::thread::JoinHandle<()>) {
     handle.join().unwrap();
-    let mut stdout = stdout();
-    stdout.execute(Clear(ClearType::CurrentLine)).unwrap();
-    stdout.execute(cursor::MoveToColumn(0)).unwrap();
+
+    result
 }
