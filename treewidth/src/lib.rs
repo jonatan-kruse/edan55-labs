@@ -24,13 +24,22 @@ fn path_to_graph(path: &str) -> Graph {
     parse_graph(&input)
 }
 
+
+pub fn get_nodes_and_width(path: &str) -> (usize, usize){
+    let new_path = "./data/".to_owned() + path;
+    let (graph, tree) = path_to_graph_tree(&new_path);
+    let nodes = graph.len();
+    let width = tree.arena.iter().fold(0, |acc, node|acc.max(node.1.val.len() - 1));
+    (nodes,width)
+}
+
 pub fn the_algorithm(path: &str) -> Score {
     let new_path = "./data/".to_owned() + path;
     let (graph, tree) = path_to_graph_tree(&new_path);
     if graph.len() == 0{
         return 0;
     }
-    if graph.len() < 128 {
+    if graph.len() < 1 {
         let edges = graph_to_adj_matrix(graph);
         r2((1 << edges.len()) - 1, &edges)
     } else {
@@ -69,7 +78,7 @@ pub fn print_bag_tree(path: &str) {
 
 pub fn run_with_spinner<T>(func: impl FnOnce() -> T) -> T {
     let spinner_chars = [
-        "🌕\n", "🌕\n", "🌔\n", "🌓\n", "🌒\n", "🌑\n", "🌑\n", "🌘\n", "🌗\n", "🌖\n",
+        "🌕  ", "🌕  ", "🌔  ", "🌓  ", "🌒  ", "🌑  ", "🌑  ", "🌘  ", "🌗  ", "🌖  ",
     ];
     let running = Arc::new(AtomicBool::new(true));
     let running_clone = running.clone();

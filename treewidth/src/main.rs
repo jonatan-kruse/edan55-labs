@@ -1,15 +1,7 @@
-use std::thread;
-use treewidth::{print_bag_tree, run_with_spinner, the_algorithm};
+use treewidth::{get_nodes_and_width, print_bag_tree, run_with_spinner, the_algorithm};
 
 fn main() {
-    
-    // let path = "web4";
-    // let path = "WorldMap";
-    // let path = "FibonacciTree_10";
-    // let path = "StarGraph_100";
-    // let path = "TutteGraph";
-    let path = "DorogovtsevGoltsevMendesGraph";
-    // let path = "HanoiTowerGraph_4_3";
+    let path = "HoffmanSingletonGraph";
 
     print_bag_tree(path);
     println!("------ Maximum Independent Set ------");
@@ -24,7 +16,15 @@ fn run_all() {
         .map(|s| format!("{}", s))
         .collect::<Vec<_>>();
     for p in paths {
-        print!("{}: ", p);
-        println!("{}", the_algorithm(&p));
+        // web4 & $5$ & $2$ & $3$ \\ 
+        let (nodes, width) = get_nodes_and_width(&p);
+        //graph
+        print!("{} & ", p);
+        //nodes
+        print!("${}$ & ", nodes);
+        //width
+        print!("${}$ & ", width);
+        //max independent
+        println!("${}$ \\\\", the_algorithm(&p));
     }
 }
