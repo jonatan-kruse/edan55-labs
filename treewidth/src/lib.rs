@@ -25,9 +25,12 @@ fn path_to_graph(path: &str) -> Graph {
 }
 
 pub fn the_algorithm(path: &str) -> Score {
-    let (graph, tree) = path_to_graph_tree(path);
+    let new_path = "./data/".to_owned() + path;
+    let (graph, tree) = path_to_graph_tree(&new_path);
+    if graph.len() == 0{
+        return 0;
+    }
     if graph.len() < 128 {
-        println!("Brute forcing");
         let edges = graph_to_adj_matrix(graph);
         r2((1 << edges.len()) - 1, &edges)
     } else {
@@ -54,7 +57,8 @@ fn graph_to_adj_matrix(graph: Graph) -> Vec<u128> {
 }
 
 pub fn print_bag_tree(path: &str) {
-    let tree = path_to_tree(&(path.to_owned() + ".td"));
+    let new_path = "./data/".to_owned() + path;
+    let tree = path_to_tree(&(new_path + ".td"));
     println!("--------------- Info ----------------");
     println!("size: {:?}", tree.size());
     println!("edges: {:?}", tree.edges());

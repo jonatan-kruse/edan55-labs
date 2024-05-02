@@ -6,7 +6,13 @@ pub fn parse_graph(input: &str) -> Graph {
     let data = input.lines();
     let mut nodes = HashMap::new();
     data.for_each(|line| {
-        if !(line.starts_with('p') || line.starts_with('c')) {
+        if line.starts_with('p') {
+            let p = line.split_whitespace().skip(2).next().unwrap();
+            let node_count = p.parse().unwrap();
+            for key in 1..=node_count {
+                nodes.entry(key).or_default();
+            }
+        } else if !(line.starts_with('c')) {
             parse_graph_line(line, &mut nodes);
         }
     });
@@ -33,9 +39,11 @@ pub fn parse_tree(input: &str) -> ArenaTree<Bag> {
     });
 
     // select a random node as root
-    let &root = tree.arena.keys().next().unwrap();
-    tree.arena.get_mut(&root).unwrap().parent = None;
-    build_tree(&mut tree, root, &nodes);
+    if tree.arena.len() > 0 {
+        let &root = tree.arena.keys().next().unwrap();
+        tree.arena.get_mut(&root).unwrap().parent = None;
+        build_tree(&mut tree, root, &nodes);
+    }
     tree
 }
 
