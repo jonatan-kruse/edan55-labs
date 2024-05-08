@@ -1,4 +1,7 @@
-use std::fs;
+use std::{
+    collections::{HashSet, VecDeque},
+    fs,
+};
 
 pub fn transform_input(path: String) -> Graph {
     let input = fs::read_to_string(path).expect("Should have been able to read the file");
@@ -23,6 +26,22 @@ pub fn transform_input(path: String) -> Graph {
             Edge { u, v, t, puv, pvu }
         })
         .collect::<Vec<_>>();
+    let mut queue = VecDeque::new();
+    let mut found = HashSet::new();
+    queue.push_back(home);
+    found.insert(home);
+    while let Some(node) = queue.pop_front() {
+        for e in edges.iter() {
+            if (e.u == node) & (e.pvu > 0.0) & (!found.contains(&e.v)) {
+                queue.push_back(e.v);
+                found.insert(e.v);
+            } else if (e.v == node) & (e.puv > 0.0) & (!found.contains(&e.u)) {
+                queue.push_back(e.u);
+                found.insert(e.u);
+            }
+        }
+    }
+    let edges: Vec<Edge> = edges.into_iter().filter(|e| found.contains(&e.u) & found.contains(&e.v)).collect();
     Graph {
         nodes,
         edges,

@@ -14,8 +14,15 @@ pub fn markov_algo(input: &Graph) -> (f32, f32) {
     let b = Vector::new(data_b);
 
     let x = (a - Matrix::<f32>::identity(input.nodes)).solve(b).unwrap();
+    let mut fed = *x.iter().nth(input.fed).unwrap();
+    let mut post = *x.iter().nth(input.post).unwrap();
+    if fed == 0.0{
+        fed = f32::INFINITY;
+    }
+    if post == 0.0 {
+        post = f32::INFINITY;
+    }
     (
-        *x.iter().nth(input.fed).unwrap(),
-        *x.iter().nth(input.post).unwrap(),
+        fed, post
     )
 }

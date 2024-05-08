@@ -16,7 +16,9 @@ fn simulate(input: &Graph, iterations: i32, start_node: usize) -> f32 {
                 .filter(|e| e.u == current_node || e.v == current_node)
                 .map(|e| if e.u == current_node { (e.v, e.puv, e.t) } else { (e.u, e.pvu, e.t) })
                 .collect::<Vec<_>>();
-
+            if possible_next_nodes.is_empty(){
+                return f32::INFINITY;
+            }
             let mut rng = rand::thread_rng();
             let random_value: f32 = rng.gen();
             let mut cumulative_probability = 0.0;
